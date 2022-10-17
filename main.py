@@ -6,6 +6,8 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
+from data_base import sqlite_db
+import admin_keybord
 
 from settings_local import API_TOKEN
 
@@ -14,6 +16,9 @@ logging.basicConfig(level=logging.DEBUG)
 storage = MemoryStorage()
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
+
+# start database
+sqlite_db.sql_start()
 
 # for admin
 ID = None
@@ -26,17 +31,16 @@ class FSMAdmin(StatesGroup):
     # photo = State()
 
 # ID of a current admin
-@dp.message_handler(commands=['admin'], is_chat_admin=True)
+@dp.message_handler(commands=['admin'])
 async def make_changes_command(message: types.Message):
     global ID
     ID = message.from_user.id
-    await bot.send_message(message.from_user.id, "What do you want?")
-    # reply_markup = button_case_admin
+    await bot.send_message(message.from_user.id, "What do you want?", reply_markup=admin_keybord.button_case_admin)
 
     await message.delete()
 
 
-# todo <if message.from_user.id == ID> add to admit`s requests
+# todo <if message.from_user.id == ID> add to admit`s requests first command of the def
 
 # start of the dialogue
 @dp.message_handler(commands="register", state=None)
@@ -50,6 +54,7 @@ async def cm_start(message: types.Message):
 async def load_name(message: types.Message, state: FSMContext):
     # save the name into dictionary (state.proxy() as data) of state machines
     async with state.proxy() as data:
+        # data is a dict and has own methods
         data['name'] = message.text
         await FSMAdmin.next()
         await message.reply("Then input your email, please/ введите email")
@@ -69,17 +74,18 @@ async def load_email(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['flat'] = message.text
         # todo валидация flat
-# todo отправка запроса на бекенд либо сообщение о некорректности введенных даных
+# todo сообщение о некорректности введенных даных
+    await sqlite_db.sql_add_command(state)
 
     async with state.proxy() as data:
         await message.reply(str(data))
 
-    # sql_add(state)
+
     await state.finish()
 
 # abort from any
 @dp.message_handler(state="*", commands='abort')
-@dp.message_handler(Text(equals="отмена", ignore_case=True), state="*")
+@dp.message_handler(Text(equals='(^(отмена|abort)?)', ignore_case=True), state="*")
 async def cancel_handler(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is None:
@@ -95,7 +101,7 @@ async def send_welcome(message: types.Message):
         KeyboardButton("ГЛАВНАЯ КНОПКА")
     )
 
-    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram.", reply_markup=markup)
+    await message.reply("Hi!\nI'm EchoBot!\nPowered by aiogram and by Dmitrii little.", reply_markup=markup)
     await message.answer(f"Your id is {message.from_user.id}")
 
     logging.info(f"{message.from_user.username}: {message.text}")
@@ -107,17 +113,17 @@ async def cats(message: types.Message):
     logging.info(f"{message.from_user.username}: {message.text}")
 
 
-@dp.message_handler()
-async def echo(message: types.Message):
-
-    markup = InlineKeyboardMarkup().add(
-        InlineKeyboardButton("Кнопка1", callback_data="but_1"),
-        InlineKeyboardButton("Кнопка2", callback_data="but_2"),
-        InlineKeyboardButton("JBT", callback_data="jbt"),
-    )
-
-    await message.answer(message.text, reply_markup=markup)
-    logging.info(f"{message.from_user.username}: {message.text}")
+# @dp.message_handler()
+# async def echo(message: types.Message):
+#
+#     markup = InlineKeyboardMarkup().add(
+#         InlineKeyboardButton("Кнопка1", callback_data="but_1"),
+#         InlineKeyboardButton("Кнопка2", callback_data="but_2"),
+#         InlineKeyboardButton("JBT", callback_data="jbt"),
+#     )
+#
+#     await message.answer(message.text, reply_markup=markup)
+#     logging.info(f"{message.from_user.username}: {message.text}")
 
 
 @dp.callback_query_handler(text_startswith="but_")
