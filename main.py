@@ -18,7 +18,7 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
 # start database
-sqlite_db.sql_start()
+# sqlite_db.sql_start()
 
 # for admin
 ID = None
@@ -64,6 +64,7 @@ async def load_name(message: types.Message, state: FSMContext):
 async def load_email(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['email'] = message.text
+        # todo сообщение о некорректности введенных даных
         await FSMAdmin.next()
         await message.reply("Then input your flat, please/ введите квартиру")
         # todo валидация email
@@ -74,7 +75,7 @@ async def load_email(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['flat'] = message.text
         # todo валидация flat
-# todo сообщение о некорректности введенных даных
+
     await sqlite_db.sql_add_command(state)
 
     async with state.proxy() as data:
