@@ -6,7 +6,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
-from data_base import sqlite_db
+from database import sqlite_db
 import admin_keybord
 
 from settings_local import API_TOKEN
