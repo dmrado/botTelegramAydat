@@ -44,15 +44,28 @@ async def make_changes_command(message: types.Message):
   await bot.send_message(ID, "What`s your wish?") 
   
   markup = InlineKeyboardMarkup().add(
-      InlineKeyboardButton("Кнопка1", callback_data="but_1"),
-      InlineKeyboardButton("Кнопка2", callback_data="but_2"),
-      InlineKeyboardButton("JBT", callback_data="jbt"),
+      InlineKeyboardButton("Get userlist", callback_data='get_list'),
+      InlineKeyboardButton("Delete user", callback_data='del_user'),
+      # InlineKeyboardButton("JBT", callback_data="jbt"),
     )
 
   await message.answer(message.text, reply_markup=markup)
   logging.info(f"{message.from_user.username}: {message.text}")
 
   await message.delete()
+
+
+@dp.callback_query_handler(text_startswith="but_")
+async def admin_button_pressed(call: types.CallbackQuery):
+  logging.info(f"{call.from_user.username}: {call.data}")
+  if (call.data == "get_list"):
+     await message.answer(message.text, "Get userlist is pushed")
+  elif (call.data == "del_user"):
+     await message.answer(message.text, "Delete user is pushed")
+  # else:
+  #   await message.answer(message.text, "Nothing selected")
+
+  await call.message.answer
 
 
 # todo <if message.from_user.id == ID> add to admit`s requests by the first command of the def
@@ -126,17 +139,17 @@ async def cats(message: types.Message):
   logging.info(f"{message.from_user.username}: {message.text}")
 
 
-@dp.message_handler()
-async def echo(message: types.Message):
+# @dp.message_handler()
+# async def echo(message: types.Message):
 
-    markup = InlineKeyboardMarkup().add(
-        InlineKeyboardButton("Кнопка1", callback_data="but_1"),
-        InlineKeyboardButton("Кнопка2", callback_data="but_2"),
-        InlineKeyboardButton("JBT", callback_data="jbt"),
-    )
+#     markup = InlineKeyboardMarkup().add(
+#         InlineKeyboardButton("Кнопка1", callback_data="but_1"),
+#         InlineKeyboardButton("Кнопка2", callback_data="but_2"),
+#         InlineKeyboardButton("JBT", callback_data="jbt"),
+#     )
 
-    await message.answer(message.text, reply_markup=markup)
-    logging.info(f"{message.from_user.username}: {message.text}")
+#     await message.answer(message.text, reply_markup=markup)
+#     logging.info(f"{message.from_user.username}: {message.text}")
 
 
 @dp.callback_query_handler(text_startswith="but_")
@@ -157,3 +170,20 @@ async def but_pressed(call: types.CallbackQuery):
 
 if __name__ == '__main__':
   executor.start_polling(dp, skip_updates=True)
+
+# @bot.callback_query_handler(func=lambda call: True)
+# def ans(call):
+#     if call.data == 'ZHALOBA':
+#         func1(call.message, call)
+
+# def func1(message, call):
+#     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+#     keyboard.add(*[types.KeyboardButton(name) for name in ['Назад']])
+#     bot.send_message(message.chat.id, "Отправьте мне текст для жалобы", reply_markup=keyboard)
+# @bot.message_handler(content_types=['text'])
+# def test(message):
+#     if message.text == 'Назад':
+#         start(message)
+        
+#     elif message.text != None:
+#         zhaloba = message.text
