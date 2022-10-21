@@ -9,7 +9,7 @@ from aiogram.dispatcher.filters import Text
 from database import sqlite_db
 import admin_keybord
 
-from settings_local_pybot import API_TOKEN
+from settings_local import API_TOKEN
 
 logging.basicConfig(level=logging.DEBUG)
 

@@ -1,3 +1,5 @@
 settings_local.py
-settings_local_aydat.py
-settings_local_pybot.py
+.idea
+/idea
+./idea
+settings_local_p.py
