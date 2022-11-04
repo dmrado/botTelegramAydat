@@ -31,7 +31,8 @@ async def get_all_prod():
     products = cur.execute("SELECT * FROM menu").fetchall()
     return products
 
-async def create_new_product(title, prod_id):
-    product = cur.execute("INSERT INTO menu VALUES (?, ?)", (title, prod_id))
-    db.commit()
+async def create_new_product(state):
+    async with state.proxy() as data:
+        product = cur.execute("INSERT INTO menu VALUES (?, ?)", (data['title'], data['photo']))
+        db.commit()
     return product

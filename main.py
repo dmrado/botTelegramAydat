@@ -34,7 +34,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is None:
         await state.finish()
-    await message.reply("Canceled!")
+    await message.reply("Canceled successful!")
     return
 
 
@@ -78,13 +78,13 @@ class FSMAdmin(StatesGroup):
     flat = State()
     # photo = State()
 
-
+# create states для сохранения чека
 class Prod(StatesGroup):
     title = State()
     photo = State()
 
 
-# start of the dialogue
+# start of the dialogue стейт-машины для FSMAdmin
 @dp.message_handler(commands="register", state=None)
 # pass to FSM-regime by the set()-command Запускаем стейт-машину
 async def cm_start(message: types.Message):
@@ -149,18 +149,21 @@ async def get_all_prod(callback: types.CallbackQuery):
         return await callback.answer()
 
     await callback.message.answer(products)
+    # что-бы не появлялся тайминг на инлайн-кнопке
+    await callback.answer()
 
 
-@dp.message_handler(text='add_new_prod')
+# старт стейт-машины для Prod по кнопке
+@dp.callback_query_handler(text='add_new_prod')
 async def create_new_prod(callback: types.CallbackQuery) -> None:
     await callback.message.delete()
-    await callback.message.answer("Send name of prod/Отправьте название продукта", reply_markup=get_cancel_kb())
     await Prod.title.set()
+    await callback.message.answer("Send name of prod/Отправьте название продукта", reply_markup=get_cancel_kb())
 
 
 @dp.message_handler(content_types=['text'], state=Prod.title)
 async def load_title(message: types.Message, state: FSMContext):
-    async with state.proxy as data:
+    async with state.proxy() as data:
         data['title'] = message.text
 
         await Prod.next()
@@ -173,17 +176,15 @@ async def check_photo(message: types.Message):
     await message.reply('Not photo/Это не фото!')
 
 
-# обрабатываем фото
+# обрабатываем правильное фото
 @dp.message_handler(content_types=['photo'], state=Prod.photo)
 async def load_photo(message: types.Message, state: FSMContext) -> None:
-    async with state.proxy as data:
+    async with state.proxy() as data:
         data['photo'] = message.photo[0].file_id
-    await message.reply('Great! Your bill was stored/Чек сохранен')
+    await sqlite_db.create_new_product(state)
+    await message.reply('Great! Your bill was stored/Чек сохранен', reply_markup=get_start_ikb())
 
     await state.finish()
-
-    product = await sqlite_db.create_new_product()
-
 
 @dp.message_handler(regexp='(^cat[s]?$|puss)')
 async def cats(message: types.Message):

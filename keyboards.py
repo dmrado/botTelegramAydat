@@ -19,7 +19,7 @@ def get_admin_keyboard() -> InlineKeyboardMarkup:
 
 def get_start_ikb() -> InlineKeyboardMarkup:
     ikb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton('Просмотрт продуктов', callback_data='get_all_prod')],
+        [InlineKeyboardButton('Просмотр чеков', callback_data='get_all_prod')],
         [InlineKeyboardButton('Добавить новый', callback_data='add_new_prod')]
     ])
     return ikb
