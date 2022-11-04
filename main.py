@@ -27,7 +27,7 @@ async def on_startup(_):
 ID = None
 
 
-# cancel from any
+# остановка процесса, вызовем где надо
 @dp.message_handler(commands=['cancel'], state="*")
 # @dp.message_handler(Text(equals='(^(отмена|abort|cancel)?)', ignore_case=True), state="*")
 async def cancel_handler(message: types.Message, state: FSMContext):
@@ -38,7 +38,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     return
 
 
-# ID of a current admin
+# ID текущего администратора
 @dp.message_handler(commands=['admin'])
 async def make_changes_command(message: types.Message):
     global ID
@@ -56,6 +56,7 @@ async def make_changes_command(message: types.Message):
     await message.delete()
 
 
+# todo определить что это делает и доделать
 @dp.callback_query_handler(text_startswith="but_")
 async def admin_button_pressed(call: types.CallbackQuery):
     logging.info(f"{call.from_user.username}: {call.data}")
@@ -71,20 +72,20 @@ async def admin_button_pressed(call: types.CallbackQuery):
 
 # todo <if message.from_user.id == ID> add to admit`s requests by the first command of the def
 
-# create states for register command
+# создаем стейты для команды register
 class FSMAdmin(StatesGroup):
     name = State()
     email = State()
     flat = State()
     # photo = State()
 
-# create states для сохранения чека
+# создаем стейты для сохранения чека
 class Prod(StatesGroup):
     title = State()
     photo = State()
 
 
-# start of the dialogue стейт-машины для FSMAdmin
+# start диалога для работы стейт-машины для FSMAdmin, команда register
 @dp.message_handler(commands="register", state=None)
 # pass to FSM-regime by the set()-command Запускаем стейт-машину
 async def cm_start(message: types.Message):
@@ -92,10 +93,10 @@ async def cm_start(message: types.Message):
     await message.reply('Input your name, please')
 
 
-# catch first answer from the user
+# отлавливаем первый ответ user
 @dp.message_handler(content_types=['text'], state=FSMAdmin.name)
 async def load_name(message: types.Message, state: FSMContext):
-    # save the name into dictionary (state.proxy() as data) of state machines
+    # сохраняем name в dictionary (state.proxy() as data) в стейте FSMAdmin
     async with state.proxy() as data:
         # data - это словарь в который мы складываем все значения
         data['name'] = message.text
@@ -105,7 +106,6 @@ async def load_name(message: types.Message, state: FSMContext):
 
 @dp.message_handler(content_types=['text'], state=FSMAdmin.email)
 async def load_email(message: types.Message, state: FSMContext):
-    # match =
     if (re.fullmatch("[\d\w\-\.]+@[\d\w\-\.]+.[\d\w\-\.]+", message.text)):
         async with state.proxy() as data:
             data['email'] = message.text
@@ -119,18 +119,17 @@ async def load_email(message: types.Message, state: FSMContext):
 async def load_flat(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['flat'] = message.text
-        # todo валидация flat
+        # todo валидация flat возможн и не нужна, а может сделать сверку со списком жильцов
 
-    await sqlite_db.sql_add_command(state)
+    await sqlite_db.sql_add_new_user(state)
 
     async with state.proxy() as data:
         await message.reply(str(data))
-
+    # Останавливаем стейт-машину очищаем стейт
     await state.finish()
 
 
-# Останавливаем стейт-машину
-
+# обрабатываем команду start, по этой команде предлагаем просмотреть или внести чек
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
     await message.answer(
@@ -139,7 +138,7 @@ async def send_welcome(message: types.Message):
     logging.info(f"{message.from_user.username}: {message.text}")
 
 
-# Обрабатываем get_start_ikb
+# Обрабатываем keyboards/get_start_ikb, по callback_query=get_all_prod
 @dp.callback_query_handler(text='get_all_prod')
 async def get_all_prod(callback: types.CallbackQuery):
     products = await sqlite_db.get_all_prod()
@@ -153,10 +152,11 @@ async def get_all_prod(callback: types.CallbackQuery):
     await callback.answer()
 
 
-# старт стейт-машины для Prod по кнопке
+# Обрабатываем keyboards/add_new_prod, по callback_query=add_new_prod
 @dp.callback_query_handler(text='add_new_prod')
 async def create_new_prod(callback: types.CallbackQuery) -> None:
     await callback.message.delete()
+    # старт стейт-машины для Prod
     await Prod.title.set()
     await callback.message.answer("Send name of prod/Отправьте название продукта", reply_markup=get_cancel_kb())
 
@@ -170,7 +170,7 @@ async def load_title(message: types.Message, state: FSMContext):
         await message.reply("Send photo of a bill/Отправьте фото чека")
 
 
-# обрабатываем не фото
+# обрабатываем если user отправил не фото
 @dp.message_handler(lambda message: not message.photo)
 async def check_photo(message: types.Message):
     await message.reply('Not photo/Это не фото!')
@@ -186,23 +186,12 @@ async def load_photo(message: types.Message, state: FSMContext) -> None:
 
     await state.finish()
 
+
+# если user заказал котиков он их получает
 @dp.message_handler(regexp='(^cat[s]?$|puss)')
 async def cats(message: types.Message):
     await message.reply(text='Cats are here 😺')
     logging.info(f"{message.from_user.username}: {message.text}")
-
-
-# @dp.message_handler()
-# async def echo(message: types.Message):
-
-#     markup = InlineKeyboardMarkup().add(
-#         InlineKeyboardButton("Кнопка1", callback_data="but_1"),
-#         InlineKeyboardButton("Кнопка2", callback_data="but_2"),
-#         InlineKeyboardButton("JBT", callback_data="jbt"),
-#     )
-
-#     await message.answer(message.text, reply_markup=markup)
-#     logging.info(f"{message.from_user.username}: {message.text}")
 
 
 @dp.callback_query_handler(text_startswith="but_")
@@ -224,20 +213,3 @@ async def but_pressed(call: types.CallbackQuery):
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-
-# @bot.callback_query_handler(func=lambda call: True)
-# def ans(call):
-#     if call.data == 'ZHALOBA':
-#         func1(call.message, call)
-
-# def func1(message, call):
-#     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-#     keyboard.add(*[types.KeyboardButton(name) for name in ['Назад']])
-#     bot.send_message(message.chat.id, "Отправьте мне текст для жалобы", reply_markup=keyboard)
-# @bot.message_handler(content_types=['text'])
-# def test(message):
-#     if message.text == 'Назад':
-#         start(message)
-
-#     elif message.text != None:
-#         zhaloba = message.text
