@@ -147,8 +147,11 @@ async def get_all_prod(callback: types.CallbackQuery):
         await callback.message.answer('Продуктов нет')
         return await callback.answer()
 
-    await callback.message.answer(products[0])
-    # await bot.send_sticker(message.from_user.id, sticker=products)
+    else:
+        for product in products:
+            print(product)
+    await callback.message.answer(products)
+    await bot.send_sticker(message.from_user.id, sticker=products)
     # что-бы не появлялся тайминг на инлайн-кнопке
     await callback.answer()
 
